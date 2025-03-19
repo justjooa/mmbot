@@ -19,6 +19,7 @@
         h3 {
             text-align: center;
             font-size: 18px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -39,52 +40,32 @@
     const tg = window.Telegram.WebApp;
     tg.expand(); // Расширяем на весь экран
 
-    // Устанавливаем параметры карты
+    // Создаем карту
     const map = L.map('map').setView([55.7558, 37.6173], 12); // Москва по умолчанию
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Загружаем рестораны из Overpass API (OSM)
-    function fetchRestaurants() {
-        const overpassUrl = "https://overpass-api.de/api/interpreter";
-        const query = `
-            [out:json];
-            node["amenity"="restaurant"](around:1000,55.7558,37.6173);
-            out;
-        `;
-
-        fetch(overpassUrl, {
-            method: "POST",
-            body: query,
-            headers: { "Content-Type": "application/x-www-form-urlencoded" }
-        })
+    // Загружаем данные из локального JSON-файла
+    fetch('restaurants.json')
         .then(response => response.json())
         .then(data => {
-            if (data.elements) {
-                data.elements.forEach(element => {
-                    if (element.lat && element.lon) {
-                        const marker = L.marker([element.lat, element.lon]).addTo(map);
-                        const name = element.tags.name || "Без названия";
-                        marker.bindPopup(`<b>${name}</b><br>${element.tags.cuisine || ''}`);
+            data.forEach(restaurant => {
+                const marker = L.marker([restaurant.lat, restaurant.lon]).addTo(map);
+                marker.bindPopup(`<b>${restaurant.name}</b><br>${restaurant.cuisine}`);
 
-                        // При клике отправляем данные в Telegram
-                        marker.on('click', () => {
-                            const restaurant = {
-                                name: name,
-                                lat: element.lat,
-                                lon: element.lon
-                            };
-                            tg.sendData(JSON.stringify(restaurant));
-                        });
-                    }
+                // При клике отправляем данные в Telegram
+                marker.on('click', () => {
+                    const restaurantData = {
+                        name: restaurant.name,
+                        lat: restaurant.lat,
+                        lon: restaurant.lon
+                    };
+                    tg.sendData(JSON.stringify(restaurantData));
                 });
-            }
+            });
         })
-        .catch(err => console.error("Ошибка получения данных:", err));
-    }
-
-    fetchRestaurants();
+        .catch(error => console.error("Ошибка загрузки данных:", error));
 </script>
 
 </body>
