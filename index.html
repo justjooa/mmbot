@@ -1,0 +1,109 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.4">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 12.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000}
+    p.p2 {margin: 0.0px 0.0px 12.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000; min-height: 14.0px}
+    span.s1 {font-kerning: none}
+  </style>
+</head>
+<body>
+<p class="p1"><span class="s1">&lt;!DOCTYPE html&gt;</span></p>
+<p class="p1"><span class="s1">&lt;html&gt;</span></p>
+<p class="p1"><span class="s1">&lt;head&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;meta charset="utf-8"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;title&gt;Web App с картой&lt;/title&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;style&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>body {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>margin: 0; padding: 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>#map {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>width: 100%;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>height: 90vh;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>h3 {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>text-align: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>margin-top: 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/head&gt;</span></p>
+<p class="p1"><span class="s1">&lt;body&gt;</span></p>
+<p class="p1"><span class="s1">&lt;h3&gt;Нажмите на маркер, чтобы отправить данные в бот&lt;/h3&gt;</span></p>
+<p class="p1"><span class="s1">&lt;div id="map"&gt;&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;!-- Leaflet JS --&gt;</span></p>
+<p class="p1"><span class="s1">&lt;script src="https://unpkg.com/leaflet/dist/leaflet.js"&gt;&lt;/script&gt;</span></p>
+<p class="p1"><span class="s1">&lt;!-- Telegram Web App JS --&gt;</span></p>
+<p class="p1"><span class="s1">&lt;script src="https://telegram.org/js/telegram-webapp.js"&gt;&lt;/script&gt;</span></p>
+<p class="p1"><span class="s1">&lt;script&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const tg = window.Telegram.WebApp;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Можно развернуть WebApp на весь экран</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>tg.expand();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Координаты центра (Москва). Можно будет сделать query-параметры ?lat=&amp;lon=...</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const lat = 55.7558;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const lon = 37.6173;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const radius = 1000; // Радиус поиска, м</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Инициализируем карту Leaflet</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const map = L.map('map').setView([lat, lon], 14);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>attribution: '© OpenStreetMap contributors'</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}).addTo(map);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>// Запрашиваем рестораны (amenity=restaurant) в окрестностях</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>async function fetchRestaurants() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const overpassUrl = "https://overpass-api.de/api/interpreter";</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>// OverpassQL-запрос</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const query = `</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>[out:json];</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>node["amenity"="restaurant"](around:${radius},${lat},${lon});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>out;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>`;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>try {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const resp = await fetch(overpassUrl, {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>method: "POST",</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>body: query,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>headers: { "Content-Type": "application/x-www-form-urlencoded" }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const data = await resp.json();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>// Пройдёмся по всем узлам</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>if (data.elements) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>data.elements.forEach(element =&gt; {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>if (element.lat &amp;&amp; element.lon) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>const marker = L.marker([element.lat, element.lon]).addTo(map);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>const name = element.tags.name || "Без названия";</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>const cuisine = element.tags.cuisine || "";</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>marker.bindPopup(`&lt;b&gt;${name}&lt;/b&gt;&lt;br&gt;${cuisine}`);</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>// При клике на маркер отправляем данные обратно в бот</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>marker.on('click', () =&gt; {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>const restaurantInfo = {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>name: name,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>lat: element.lat,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>lon: element.lon</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>};</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>// Отправляем строку JSON через Telegram.WebApp.sendData</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>tg.sendData(JSON.stringify(restaurantInfo));</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>} catch (err) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>console.error("Ошибка запроса Overpass:", err);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>fetchRestaurants();</span></p>
+<p class="p1"><span class="s1">&lt;/script&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/body&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/html&gt;</span></p>
+</body>
+</html>
