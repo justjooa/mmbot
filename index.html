@@ -2,101 +2,90 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>MealMap - Карта ресторанов</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MealMap - Карта ресторанов</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://telegram.org/js/telegram-webapp.js"></script>
     <style>
-        body {
+        body, html {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
-        }
-        h3 {
-            text-align: center;
-            font-weight: bold;
+            height: 100%;
         }
         #map {
             width: 100%;
-            height: 80vh; /* Изменено с 90vh */
-            min-height: 500px; /* Минимальная высота */
+            height: 90vh;
+        }
+        h3 {
+            text-align: center;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
 
-    <h3>Нажмите на маркер, чтобы отправить данные в бот</h3>
-    <div id="map"></div>
+<h3>Нажмите на маркер, чтобы отправить данные в бот</h3>
+<div id="map"></div>
 
-    <!-- Подключаем Telegram Web App JS -->
-    <script src="https://telegram.org/js/telegram-webapp.js"></script>
-    <!-- Подключаем Leaflet JS -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-    <script>
-        // Инициализируем Telegram Web App
-        Telegram.WebApp.expand(); // Расширяем WebView
+<script>
+    // Проверяем, что код выполняется внутри Telegram Web App
+    if (typeof Telegram === "undefined" || !Telegram.WebApp) {
+        alert("Этот WebApp должен быть открыт в Telegram!");
+    }
 
-        // Получаем координаты пользователя из GET-параметров (если нет — дефолт Москва)
-        const params = new URLSearchParams(window.location.search);
-        const lat = parseFloat(params.get('lat')) || 55.7558;
-        const lon = parseFloat(params.get('lon')) || 37.6173;
+    // Получаем объект Telegram
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Расширяем на весь экран
 
-        console.log(`Используем координаты: lat=${lat}, lon=${lon}`);
+    // Устанавливаем параметры карты
+    const map = L.map('map').setView([55.7558, 37.6173], 12); // Москва по умолчанию
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
 
-        // Инициализируем карту Leaflet
-        const map = L.map('map', { zoomControl: false }).setView([lat, lon], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+    // Загружаем рестораны из Overpass API (OSM)
+    function fetchRestaurants() {
+        const overpassUrl = "https://overpass-api.de/api/interpreter";
+        const query = `
+            [out:json];
+            node["amenity"="restaurant"](around:1000,55.7558,37.6173);
+            out;
+        `;
 
-        // Функция запроса ресторанов через Overpass API
-        function fetchRestaurants() {
-            const overpassUrl = "https://overpass-api.de/api/interpreter";
-            const query = `
-                [out:json];
-                node["amenity"="restaurant"](around:1000,${lat},${lon});
-                out;
-            `;
-
-            console.log("Запрос в Overpass API:", query);
-
-            fetch(overpassUrl, {
-                method: "POST",
-                body: query,
-                headers: {"Content-Type": "application/x-www-form-urlencoded"}
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("Полученные данные:", data);
-
-                if (!data.elements || data.elements.length === 0) {
-                    alert("Рестораны не найдены в радиусе 1 км.");
-                    return;
-                }
-
-                // Добавляем маркеры на карту
+        fetch(overpassUrl, {
+            method: "POST",
+            body: query,
+            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.elements) {
                 data.elements.forEach(element => {
                     if (element.lat && element.lon) {
-                        const name = element.tags.name || "Без названия";
-                        const cuisine = element.tags.cuisine || "Кухня не указана";
-                        
                         const marker = L.marker([element.lat, element.lon]).addTo(map);
-                        marker.bindPopup(`<b>${name}</b><br>${cuisine}`);
+                        const name = element.tags.name || "Без названия";
+                        marker.bindPopup(`<b>${name}</b><br>${element.tags.cuisine || ''}`);
 
-                        // Отправка данных в Telegram Bot при клике
+                        // При клике отправляем данные в Telegram
                         marker.on('click', () => {
-                            const restaurant = { name, lat: element.lat, lon: element.lon };
-                            Telegram.WebApp.sendData(JSON.stringify(restaurant));
-                            alert(`Вы выбрали: ${name}`);
+                            const restaurant = {
+                                name: name,
+                                lat: element.lat,
+                                lon: element.lon
+                            };
+                            tg.sendData(JSON.stringify(restaurant));
                         });
                     }
                 });
-            })
-            .catch(err => console.error("Ошибка загрузки ресторанов:", err));
-        }
+            }
+        })
+        .catch(err => console.error("Ошибка получения данных:", err));
+    }
 
-        fetchRestaurants(); // Запускаем поиск ресторанов
+    fetchRestaurants();
+</script>
 
-    </script>
 </body>
 </html>
