@@ -1,94 +1,76 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <meta charset="utf-8">
-    <title>Web App с картой</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <meta charset="UTF-8">
+    <title>Карта ресторанов</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
-        #map {
-            width: 100%;
-            height: 90vh;
-        }
-        h3 {
-            text-align: center;
-            margin-top: 0;
-        }
+        #map { width: 100%; height: 90vh; }
+        body { margin: 0; padding: 0; }
     </style>
 </head>
 <body>
-<h3>Нажмите на маркер, чтобы отправить данные в бот</h3>
-<div id="map"></div>
+    <h3 style="text-align:center;">Нажмите на маркер, чтобы отправить данные в бот</h3>
+    <div id="map"></div>
 
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<!-- Telegram Web App JS -->
-<script src="https://telegram.org/js/telegram-webapp.js"></script>
-<script>
-    const tg = window.Telegram.WebApp;
-    // Расширим Web App на весь экран
-    tg.expand();
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Telegram Web App JS -->
+    <script src="https://telegram.org/js/telegram-webapp.js"></script>
 
-    // Координаты центра (Москва)
-    const lat = 55.7558;
-    const lon = 37.6173;
-    const radius = 1000; // Радиус поиска, метров
+    <script>
+        // Получаем координаты из GET-параметров
+        const params = new URLSearchParams(window.location.search);
+        const lat = parseFloat(params.get('lat')) || 55.7558;  // Москва
+        const lon = parseFloat(params.get('lon')) || 37.6173;
 
-    // Инициализируем карту Leaflet
-    const map = L.map('map').setView([lat, lon], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+        // Инициализация карты
+        const map = L.map('map').setView([lat, lon], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
-    // Функция для получения данных из Overpass API
-    async function fetchRestaurants() {
-        const overpassUrl = "https://overpass-api.de/api/interpreter";
-        // Запрос для поиска ресторанов (amenity=restaurant) в радиусе 1000 м
-        const query = `
-            [out:json];
-            node["amenity"="restaurant"](around:${radius},${lat},${lon});
-            out;
-        `;
-        try {
-            const resp = await fetch(overpassUrl, {
+        // Добавляем маркер пользователя
+        const userMarker = L.marker([lat, lon], {color: 'blue'}).addTo(map)
+            .bindPopup("Ваше местоположение").openPopup();
+
+        // Функция для загрузки ресторанов с OpenStreetMap
+        function fetchRestaurants() {
+            const overpassUrl = "https://overpass-api.de/api/interpreter";
+            const query = `
+                [out:json];
+                node["amenity"="restaurant"](around:1000,${lat},${lon});
+                out;
+            `;
+            fetch(overpassUrl, {
                 method: "POST",
                 body: query,
-                headers: { "Content-Type": "application/x-www-form-urlencoded" }
-            });
-            const data = await resp.json();
+                headers: {"Content-Type": "application/x-www-form-urlencoded"}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.elements.length === 0) {
+                    alert("Рестораны не найдены в радиусе 1 км.");
+                } else {
+                    data.elements.forEach(element => {
+                        if (element.lat && element.lon) {
+                            const name = element.tags.name || "Без названия";
+                            const marker = L.marker([element.lat, element.lon]).addTo(map);
+                            marker.bindPopup(`<b>${name}</b><br>Кухня: ${element.tags.cuisine || 'Не указано'}`);
 
-            // Если есть результаты
-            if (data.elements) {
-                data.elements.forEach(element => {
-                    if (element.lat && element.lon) {
-                        // Установим маркер
-                        const marker = L.marker([element.lat, element.lon]).addTo(map);
-                        const name = element.tags.name || "Без названия";
-                        const cuisine = element.tags.cuisine || "";
-                        marker.bindPopup(`<b>${name}</b><br>${cuisine}`);
-
-                        // При клике по маркеру отправим данные об этом ресторане в бота
-                        marker.on('click', () => {
-                            const restaurantInfo = {
-                                name: name,
-                                lat: element.lat,
-                                lon: element.lon
-                            };
-                            // Отправляем JSON строку через Telegram.WebApp.sendData
-                            tg.sendData(JSON.stringify(restaurantInfo));
-                        });
-                    }
-                });
-            }
-        } catch (err) {
-            console.error("Ошибка запроса Overpass:", err);
+                            // Отправка данных в Telegram Bot при клике
+                            marker.on('click', () => {
+                                const restaurant = { name, lat: element.lat, lon: element.lon };
+                                Telegram.WebApp.sendData(JSON.stringify(restaurant));
+                            });
+                        }
+                    });
+                }
+            })
+            .catch(err => console.error("Ошибка загрузки ресторанов:", err));
         }
-    }
 
-    fetchRestaurants();
-</script>
+        fetchRestaurants();
+    </script>
 </body>
 </html>
